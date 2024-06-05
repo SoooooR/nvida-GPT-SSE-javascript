@@ -32,7 +32,7 @@ http.createServer((req, res) => {
 
     let id = 0
     const openai = new ai.OpenAI({
-      apiKey: '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',
+      apiKey: '',
       baseURL: 'https://integrate.api.nvidia.com/v1',
     })
 
