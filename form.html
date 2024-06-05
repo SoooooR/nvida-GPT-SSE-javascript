@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSE Demo</title>
+  <style>
+        .container {
+          height: 70vh;
+          display: flex;
+          justify-content: center;
+        }
+
+        .box {
+            width: 90%;
+            border: 1px solid black;
+            height: 90%;
+            overflow: scroll;
+            padding: 10px;
+            scroll-behavior: smooth;
+
+        }
+
+        .T1 {
+          height: 22vh;
+          display: flex;
+          justify-content: center;
+        }
+
+        .t1 {
+            width: 90%;
+            border: 1px solid black;
+            height: 90%;
+            overflow: scroll;
+            padding: 10px;
+
+        }
+        .text{
+            vertical-align:top;
+        }
+  </style>
+</head>
+<body>
+  <div id="s" class="container">
+    <div class="box" id="scroll-to-bottom">
+    </div>
+  </div>
+
+
+
+
+  <div id="en1" class="T1">
+    <div class="t1" id="en2">
+      <form id="myForm" action="/submit-form" method="post" >
+        <textarea id="text" placeholder="回车发送" name = "username" cols="110" rows="5"></textarea>
+      </form>
+    </div>
+  </div>
+
+
+  <script>
+    const content = document.getElementById('text');
+    document.getElementById("text").addEventListener("keydown", function(event) {
+            if (event.keyCode === 13) { // 按下回车键的键码是13
+                event.preventDefault(); // 阻止回车键的默认行为
+                const message = content.value;
+                content.value = '';
+                // 发送 POST 请求到服务器
+                fetch('/submit-form', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded' // 或者 'application/json' 如果您发送JSON
+                  },
+                  body: `username=${encodeURIComponent(message)}` // 使用表单编码的字符串
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to submit form');
+                    }
+                    // 表单提交成功，现在可以建立 SSE 连接
+                    establishSSEConnection();
+                })
+                .catch(error => {
+                    console.error('Error submitting form:', error);
+                });
+            }
+    });
+
+
+    function establishSSEConnection() {
+       const messageElement = document.getElementById('scroll-to-bottom');
+       let eventSource
+          // 建立 SSE 连接
+       eventSource = new EventSource('http://127.0.0.1:3000/sse')
+
+        // 监听消息事件
+       eventSource.addEventListener('customEvent', (event) => {
+          const data = JSON.parse(event.data)
+          messageElement.innerHTML += data ;
+          messageElement.scrollTop = messageElement.scrollHeight;
+          if (data.trim().endsWith('<br/>')) {
+              // 如果是，则断开连接
+              eventSource.close();
+          }
+       })
+    }
+
+    // 断开 SSE 连接
+    const closeSSE = () => {
+      eventSource.close()
+    }
+  </script>
+</body>
+</html>
